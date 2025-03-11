@@ -1,6 +1,7 @@
-"use client";
+"use client"; // Indique que c'est un composant client-side (exécuté dans le navigateur)
 
-import { useState } from "react";
+import { useState } from "react"; // Import du hook useState pour gérer l'état local
+// Imports de composants UI personnalisés
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,18 +12,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+// Import d'icônes pour l'alignement du texte
 import { AlignLeft, AlignCenter, AlignRight, AlignJustify } from "lucide-react";
 
 export interface EditorProps {
-  value: string;
-  onChange: (value: string) => void;
+  value: string; // Le contenu du texte
+  onChange: (value: string) => void; // Fonction appelée quand le texte change
 }
-
 export default function Editor({ value, onChange }: EditorProps) {
-  const [fontSize, setFontSize] = useState("16");
-  const [fontFamily, setFontFamily] = useState("Arial");
-  const [textAlign, setTextAlign] = useState("left");
+  // États locaux pour gérer les propriétés de style du texte
+  const [fontSize, setFontSize] = useState("16"); // Taille de police
+  const [fontFamily, setFontFamily] = useState("Arial"); // Police
+  const [textAlign, setTextAlign] = useState("left"); // Alignement
 
+  // Tableaux des options disponibles pour chaque propriété
   const fonts = [
     "Arial",
     "Times New Roman",
