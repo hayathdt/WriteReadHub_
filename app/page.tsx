@@ -19,6 +19,12 @@ export default function Home() {
     loadStories();
   }, []);
 
+  const handleDelete = (deletedId: string) => {
+    setStories((prevStories) =>
+      prevStories.filter((story) => story.id !== deletedId)
+    );
+  };
+
   return (
     <>
       <section className="min-h-screen flex items-center justify-center">
@@ -26,7 +32,7 @@ export default function Home() {
       </section>
       <section className="container mx-auto px-4 py-12">
         <h2 className="text-3xl font-bold mb-8 text-center">Latest Stories</h2>
-        <StoryList stories={stories} user={user} />
+        <StoryList stories={stories} user={user} onDelete={handleDelete} />
       </section>
     </>
   );

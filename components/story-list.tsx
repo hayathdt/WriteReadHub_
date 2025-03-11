@@ -8,18 +8,46 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { formatDate } from "@/lib/utils";
-import { Edit } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
+import { deleteStory } from "@/lib/firebase/firestore";
 import type { Story } from "@/lib/types";
 import type { User } from "firebase/auth";
+import { useState } from "react";
 
 export default function StoryList({
   stories,
   user,
+  onDelete,
 }: {
   stories: Story[];
   user: User | null;
+  onDelete?: (id: string) => void;
 }) {
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  const handleDelete = async (storyId: string) => {
+    setIsDeleting(storyId);
+    try {
+      await deleteStory(storyId);
+      onDelete?.(storyId);
+    } catch (error) {
+      console.error("Failed to delete story:", error);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
   if (stories.length === 0) {
     return (
       <div className="text-center py-12">
@@ -71,11 +99,39 @@ export default function StoryList({
               </span>
             </div>
             {user && story.authorId === user.uid && (
-              <Link href={`/write?id=${story.id}`}>
-                <Button variant="ghost" size="icon">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href={`/write?id=${story.id}`}>
+                  <Button variant="ghost" size="icon">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Story</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{story.title}"? This
+                        action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(story.id)}
+                        disabled={isDeleting === story.id}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        {isDeleting === story.id ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </CardFooter>
         </Card>

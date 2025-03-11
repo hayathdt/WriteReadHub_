@@ -9,6 +9,7 @@ import {
   orderBy,
   limit,
   updateDoc,
+  deleteDoc,
   type DocumentData,
 } from "firebase/firestore";
 import type { Story, StoryInput, StoryUpdate } from "../types";
@@ -95,5 +96,15 @@ export async function updateStory(
   } catch (error) {
     console.error("Error updating story: ", error);
     throw new Error("Failed to update story");
+  }
+}
+
+export async function deleteStory(id: string): Promise<void> {
+  try {
+    const docRef = doc(db, "stories", id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting story: ", error);
+    throw new Error("Failed to delete story");
   }
 }
