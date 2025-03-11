@@ -37,7 +37,7 @@ export default function WritePage() {
             setContent(loadedStory.content); // Pré-remplir l'éditeur
           }
         } catch (err: any) {
-          setError("Échec du chargement de l'article");
+          setError("Failed to load the article");
         }
       };
       loadStory();
@@ -77,7 +77,7 @@ export default function WritePage() {
       localStorage.removeItem("pendingStory");
       router.push("/"); // Redirection après succès
     } catch (err: any) {
-      setError(err.message || "Échec de la sauvegarde");
+      setError(err.message || "Failed to save the article");
     } finally {
       setIsSaving(false); // Réinitialisation de l'état
     }
@@ -92,7 +92,7 @@ export default function WritePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-semibold text-emerald-900">
-              {storyId ? "Éditer l'article" : "Écrire un nouvel article"}
+              {storyId ? "Edit Story" : "Write Your Story"}
             </h1>
             <div className="space-x-4">
               <Button
@@ -100,14 +100,14 @@ export default function WritePage() {
                 className="bg-black hover:bg-gray-800 text-white"
                 disabled={isSaving}
               >
-                Enregistrer comme brouillon
+                Save as Draft
               </Button>
               <Button
                 onClick={() => handleSave("published")}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 disabled={isSaving}
               >
-                {isSaving ? "Sauvegarde..." : "Publier"}
+                {isSaving ? "Saving..." : "Publish"}
               </Button>
             </div>
           </div>
