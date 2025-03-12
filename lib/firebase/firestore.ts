@@ -10,16 +10,9 @@ import {
   limit,
   updateDoc,
   deleteDoc,
-  setDoc,
   type DocumentData,
 } from "firebase/firestore";
-import type {
-  Story,
-  StoryInput,
-  StoryUpdate,
-  UserProfile,
-  ProfileUpdate,
-} from "../types";
+import type { Story, StoryInput, StoryUpdate } from "../types";
 
 export async function createStory(storyData: StoryInput): Promise<string> {
   try {
@@ -113,80 +106,5 @@ export async function deleteStory(id: string): Promise<void> {
   } catch (error) {
     console.error("Error deleting story: ", error);
     throw new Error("Failed to delete story");
-  }
-}
-
-export async function getProfile(userId: string): Promise<UserProfile | null> {
-  try {
-    const docRef = doc(db, "profiles", userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data() as DocumentData;
-      return {
-        uid: docSnap.id,
-        displayName: data.displayName,
-        bio: data.bio,
-        socialLinks: data.socialLinks || {},
-        profileImageUrl: data.profileImageUrl,
-        joinDate: data.joinDate,
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting profile: ", error);
-    return null;
-  }
-}
-
-export async function createProfile(
-  userId: string,
-  profile: UserProfile
-): Promise<void> {
-  try {
-    const docRef = doc(db, "profiles", userId);
-    await setDoc(docRef, { ...profile } as DocumentData);
-  } catch (error) {
-    console.error("Error creating profile: ", error);
-    throw new Error("Failed to create profile");
-  }
-}
-
-export async function updateProfile(
-  userId: string,
-  updates: ProfileUpdate
-): Promise<void> {
-  try {
-    const docRef = doc(db, "profiles", userId);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      // If profile doesn't exist, create it with the updates
-      await setDoc(docRef, {
-        uid: userId,
-        displayName: updates.displayName || "Anonymous",
-        bio: updates.bio || "",
-        socialLinks: updates.socialLinks || {},
-        profileImageUrl: "/placeholder-user.jpg",
-        joinDate: new Date().toISOString(),
-        ...updates,
-      } as DocumentData);
-    } else {
-      // If profile exists, update it
-      await updateDoc(docRef, { ...updates } as DocumentData);
-    }
-  } catch (error) {
-    console.error("Error updating profile: ", error);
-    throw new Error("Failed to update profile");
-  }
-}
-
-export async function deleteProfile(userId: string): Promise<void> {
-  try {
-    const docRef = doc(db, "profiles", userId);
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error("Error deleting profile: ", error);
-    throw new Error("Failed to delete profile");
   }
 }
