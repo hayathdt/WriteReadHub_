@@ -32,3 +32,20 @@ export interface StoryUpdate {
   status?: StoryStatus;
   updatedAt: string;
 }
+
+export interface SocialLinks {
+  twitter?: string;
+  github?: string;
+  linkedin?: string;
+  website?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  displayName: string;
+  email: string;
+  bio: string;
+  avatar: string;
+  website?: string;
+  socialLinks?: SocialLinks;
+}

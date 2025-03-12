@@ -10,9 +10,10 @@ import {
   limit,
   updateDoc,
   deleteDoc,
+  setDoc,
   type DocumentData,
 } from "firebase/firestore";
-import type { Story, StoryInput, StoryUpdate } from "../types";
+import type { Story, StoryInput, StoryUpdate, UserProfile } from "../types";
 
 export async function createStory(storyData: StoryInput): Promise<string> {
   try {
@@ -106,5 +107,57 @@ export async function deleteStory(id: string): Promise<void> {
   } catch (error) {
     console.error("Error deleting story: ", error);
     throw new Error("Failed to delete story");
+  }
+}
+
+export async function createUserProfile(
+  userId: string,
+  profileData: UserProfile
+): Promise<void> {
+  try {
+    const userRef = doc(db, "users", userId);
+    await setDoc(userRef, profileData);
+  } catch (error) {
+    console.error("Error creating user profile: ", error);
+    throw new Error("Failed to create user profile");
+  }
+}
+
+export async function getUserProfile(
+  userId: string
+): Promise<UserProfile | null> {
+  try {
+    const docRef = doc(db, "users", userId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data() as DocumentData;
+      return {
+        id: docSnap.id,
+        bio: data.bio || "",
+        website: data.website || "",
+        socialLinks: data.socialLinks || {},
+        avatar: data.avatar || "",
+        displayName: data.displayName,
+        email: data.email,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting user profile: ", error);
+    return null;
+  }
+}
+
+export async function updateUserProfile(
+  userId: string,
+  updateData: Partial<UserProfile>
+): Promise<void> {
+  try {
+    const docRef = doc(db, "users", userId);
+    await updateDoc(docRef, updateData as DocumentData);
+  } catch (error) {
+    console.error("Error updating user profile: ", error);
+    throw new Error("Failed to update user profile");
   }
 }

@@ -1,136 +1,145 @@
-"use client"; //1. Cette ligne est très importante - elle indique à Next.js que ce composant doit être exécuté côté client
-// C'est nécessaire car nous utilisons des états (useState) et des interactions utilisateur
+"use client";
 
-//2. imports nécessaires pour le composant
 import type React from "react";
-
-import { useState } from "react"; // pour gérer l'état local
-import { useRouter } from "next/navigation"; // pour naviguer entre les pages
-import Link from "next/link"; // pour créer des liens de navigation
-import { useAuth } from "@/lib/auth-context"; // hook personnalisé pour l'authentification
-
-// Importation des composants UI réutilisables de l'UI
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-//3. Définition du composant principal
 export default function SignupPage() {
-  //4. Déclaration des états avec useState
-  const [email, setEmail] = useState(""); // pour stocker l'email saisi
-  const [password, setPassword] = useState(""); // pour stocker le mot de passe saisi
-  const [displayName, setDisplayName] = useState(""); // pour stocker le nom d'affichage saisi
-  const [error, setError] = useState(""); // pour gérer les messages d'erreur
-  const [isLoading, setIsLoading] = useState(false); // pour gérer l'état de chargement
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  //5. Récupération des fonctions d'authentification et du gestionnaire de navigation
-  const { signup } = useAuth(); // fonction d'inscription depuis le contexte d'auth
-  const router = useRouter(); // pour naviguer entre les pages
+  const { signup } = useAuth();
+  const router = useRouter();
 
-  //6. Fonction pour gérer la soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // empêcher le rechargement de la page
-    setError(""); // réinitialiser les erreurs
-    setIsLoading(true); // activer l'état de chargement
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     try {
-      // tentative d'inscription
       await signup(email, password, displayName);
-      router.push("/"); // rediriger vers la page d'accueil après l'inscription si succes
+      router.push("/");
     } catch (err: any) {
-      // gestion des erreurs
       setError(err.message || "Failed to create account");
     } finally {
-      setIsLoading(false); // désactiver l'état de chargement
+      setIsLoading(false);
     }
   };
 
-  //7. Rendu du composant
   return (
-    //8. Conteneur principal avec mise en page centrée
-    <div className="flex items-center justify-center min-h-[80vh] px-4">
-      <Card className="w-full max-w-md">
-        {/* En-tête */}
-        <CardHeader>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>
-            Enter your details to create your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Affichage conditionnel des erreurs */}
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+    <div className="flex items-center justify-center min-h-[80vh] px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 shadow-2xl">
+          <div className="px-6 py-6 border-b border-gray-200/50 dark:border-gray-800/50">
+            <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+              Create your account
+            </h1>
+            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+              Join WriteReadHub and start sharing your stories
+            </p>
+          </div>
 
-          {/* Formulaire avec les champs */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
-              <Input
-                id="displayName"
-                placeholder="Your name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              <p className="text-xs text-muted-foreground">
-                Password must be at least 6 characters long
-              </p>
-            </div>
+          <div className="p-6">
+            {error && (
+              <Alert
+                variant="destructive"
+                className="mb-6 rounded-2xl border-red-500/20 bg-red-50/50 dark:bg-red-900/20 backdrop-blur-xl"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-            {/* Bouton de soumission avec état de chargement */}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
-            </Button>
-          </form>
-        </CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="displayName"
+                  className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  Display Name
+                </Label>
+                <Input
+                  id="displayName"
+                  placeholder="Your name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  required
+                  className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl transition-colors focus:border-blue-500/50 dark:focus:border-blue-500/50"
+                />
+              </div>
 
-        {/* Pied de page avec lien vers la connexion */}
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
-              Login
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl transition-colors focus:border-blue-500/50 dark:focus:border-blue-500/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl transition-colors focus:border-blue-500/50 dark:focus:border-blue-500/50"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Password must be at least 6 characters long
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 transition-colors"
+              >
+                {isLoading ? "Creating account..." : "Create account"}
+              </Button>
+            </form>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200/50 dark:border-gray-800/50 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
+              >
+                Login
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

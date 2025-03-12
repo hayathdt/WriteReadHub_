@@ -1,122 +1,130 @@
-"use client"; // Cette ligne est très importante - elle indique à Next.js que ce composant doit être exécuté côté client
-// C'est nécessaire car nous utilisons des états (useState) et des interactions utilisateur
+"use client";
 
-// importations des jooks Reac et Next.js
 import type React from "react";
-
-import { useState } from "react"; // pour gérer les états
-import { useRouter } from "next/navigation"; // pour naviguer entre les pages
-import Link from "next/link"; // pour créer des liens de navigation
-import { useAuth } from "@/lib/auth-context"; // hook personnalisé  pour gérer l'authentification
-
-// imports des compasant UI réutilisables qui viennent de la bibliothèque UI
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
-  // déclaration des états locaux gérés avec useState
-  const [email, setEmail] = useState(""); // pour stocker l'email saisi
-  const [password, setPassword] = useState(""); // pour stocker le mot de passe saisi
-  const [error, setError] = useState(""); // pour gérer les messages d'erreur
-  const [isLoading, setIsLoading] = useState(false); // pour gérer l'état de chargement
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // récupération des fonctions d'authentification et de navigation depuis le contexte d'authentification
-  const { login } = useAuth(); // fonction de connexion depuis le context d'authentification
-  const router = useRouter(); // fonction pour la redirection(navigation) après la connexion réussie
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // emppêche le rechargement de la page (car c'est le comportement par défaut du formulaire)
-    setError(""); // rréinitialise le message d'erreur
-    setIsLoading(true); // active l'état de chargement pour désactiver le bouton de connexion
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     try {
-      // tentative de connexion avec les informations saisies
       await login(email, password);
-      router.push("/"); // redirection vers la page d'accueil après la connexion réussie
+      router.push("/");
     } catch (err: any) {
-      // gestion des erreurs
       setError(err.message || "Failed to login");
     } finally {
-      // désactive l'état de chargement Dans tous les cas, y compris en cas d'erreur
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh] px-4">
-      {/* Card principale du formulaire */}
-      <Card className="w-full max-w-md">
-        {/* En-tête du formulaire */}
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email and password to access your account
-          </CardDescription>
-        </CardHeader>
+    <div className="flex items-center justify-center min-h-[80vh] px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 shadow-2xl">
+          <div className="px-6 py-6 border-b border-gray-200/50 dark:border-gray-800/50">
+            <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+              Welcome back
+            </h1>
+            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+              Enter your email and password to access your account
+            </p>
+          </div>
 
-        <CardContent>
-          {/* Affichage conditionnel des erreurs */}
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <div className="p-6">
+            {error && (
+              <Alert
+                variant="destructive"
+                className="mb-6 rounded-2xl border-red-500/20 bg-red-50/50 dark:bg-red-900/20 backdrop-blur-xl"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {/* Formulaire de connexion */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Champ Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)} // Mise à jour de l'état email
-                required
-              />
-            </div>
-
-            {/* Champ Mot de passe avec lien "Mot de passe oublié" */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password">Forgot password?</Link>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl transition-colors focus:border-blue-500/50 dark:focus:border-blue-500/50"
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)} // Mise à jour de l'état password
-                required
-              />
-            </div>
 
-            {/* Bouton de soumission */}
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
-            </Button>
-          </form>
-        </CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >
+                    Password
+                  </Label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl transition-colors focus:border-blue-500/50 dark:focus:border-blue-500/50"
+                />
+              </div>
 
-        {/* Pied de page avec lien d'inscription */}
-        <CardFooter className="flex justify-center">
-          <p>
-            Don&apos;t have an account? <Link href="/signup">Sign up</Link>
-          </p>
-        </CardFooter>
-      </Card>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 transition-colors"
+              >
+                {isLoading ? "Logging in..." : "Login"}
+              </Button>
+            </form>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200/50 dark:border-gray-800/50 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Don&apos;t have an account?{" "}
+              <Link
+                href="/signup"
+                className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
