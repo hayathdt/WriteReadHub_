@@ -1,25 +1,29 @@
-// Importe les dépendances et déclare que c'est un composant client (exécuté coté navigateur)
 "use client";
 
-import { useEffect, useState } from "react";
-// Utilise un hook personnalisé pour récupérer les infos de l'utilisateur connecté
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
   getProfile,
   updateProfile,
   createProfile,
 } from "@/lib/firebase/firestore";
+import { uploadProfileImage } from "@/lib/firebase/storage";
 import type { UserProfile, ProfileUpdate } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Camera } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<ProfileUpdate>({
     displayName: "",
     bio: "",
@@ -29,7 +33,6 @@ export default function ProfilePage() {
     },
   });
 
-  // Quand la page se charge et qu'un utilisateur est connecté, on charge ses infos de profil
   useEffect(() => {
     if (user) {
       loadProfile();
@@ -42,9 +45,7 @@ export default function ProfilePage() {
     try {
       let userProfile = await getProfile(user.uid);
 
-      // Créer un profil par défaut si aucun profil n'existe pour l'utilisateur
       if (!userProfile) {
-        // Create default profile if none exists
         const defaultProfile: UserProfile = {
           uid: user.uid,
           displayName: user.displayName || "Anonymous",
@@ -67,6 +68,46 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Error loading profile:", error);
       toast.error("Failed to load profile");
+    }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.uid) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const imageUrl = await uploadProfileImage(user.uid, file, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      await updateProfile(user.uid, { profileImageUrl: imageUrl });
+      await loadProfile();
+      toast.success("Profile picture updated successfully");
+    } catch (error) {
+      toast.error("Failed to upload profile picture");
+      console.error("Error uploading image:", error);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -197,13 +238,37 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-8">
               <div className="flex items-center space-x-6">
-                <div className="relative">
+                <div className="relative group">
                   <img
                     src={profile.profileImageUrl}
                     alt={profile.displayName}
                     className="h-24 w-24 rounded-[22px] object-cover ring-4 ring-gray-50 dark:ring-gray-800"
                   />
                   <div className="absolute inset-0 rounded-[22px] ring-1 ring-inset ring-gray-900/10 dark:ring-white/10" />
+
+                  {/* Upload overlay */}
+                  <button
+                    onClick={handleImageClick}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-[22px] cursor-pointer"
+                  >
+                    <Camera className="w-6 h-6 text-white" />
+                  </button>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+
+                  {/* Upload progress */}
+                  {isUploading && (
+                    <div className="absolute -bottom-2 left-0 right-0 px-2">
+                      <Progress value={uploadProgress} className="h-1 w-full" />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
