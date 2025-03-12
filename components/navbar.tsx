@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { BookOpen, Menu, X } from "lucide-react"
-import { useState } from "react"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const pathname = usePathname()
+  const { user, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   const closeMenu = () => {
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,14 +42,28 @@ export default function Navbar() {
               Home
             </Link>
             {user && (
-              <Link
-                href="/create-story"
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === "/create-story" ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                Write a Story
-              </Link>
+              <>
+                <Link
+                  href="/create-story"
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    pathname === "/create-story"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Write a Story
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    pathname === "/profile"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Profile
+                </Link>
+              </>
             )}
           </nav>
 
@@ -57,7 +71,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground">Hello, {user.displayName || "User"}</span>
+                <span className="text-sm text-muted-foreground">
+                  Hello, {user.displayName || "User"}
+                </span>
                 <Button variant="outline" onClick={logout}>
                   Logout
                 </Button>
@@ -75,8 +91,16 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden" onClick={toggleMenu} aria-label={isMenuOpen ? "Close menu" : "Open menu"}>
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <button
+            className="md:hidden"
+            onClick={toggleMenu}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
@@ -95,26 +119,43 @@ export default function Navbar() {
               Home
             </Link>
             {user && (
-              <Link
-                href="/create-story"
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === "/create-story" ? "text-primary" : "text-muted-foreground"
-                }`}
-                onClick={closeMenu}
-              >
-                Write a Story
-              </Link>
+              <>
+                <Link
+                  href="/create-story"
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    pathname === "/create-story"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Write a Story
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    pathname === "/profile"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Profile
+                </Link>
+              </>
             )}
 
             <div className="border-t pt-4 mt-2">
               {user ? (
                 <>
-                  <div className="text-sm text-muted-foreground mb-2">Hello, {user.displayName || "User"}</div>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Hello, {user.displayName || "User"}
+                  </div>
                   <Button
                     variant="outline"
                     onClick={() => {
-                      logout()
-                      closeMenu()
+                      logout();
+                      closeMenu();
                     }}
                   >
                     Logout
@@ -137,6 +178,5 @@ export default function Navbar() {
         </div>
       )}
     </header>
-  )
+  );
 }
-
