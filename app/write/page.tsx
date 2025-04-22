@@ -1,40 +1,34 @@
-"use client"; // Nécessaire pour les composants React utilisant des hooks
+"use client";
 
-// Import des dépendances principales
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/auth-context"; // Contexte d'authentification
-import { createStory, updateStory, getStory } from "@/lib/firebase/firestore"; // Interactions Firebase
-import Editor from "../create-story/editor"; // Composant éditeur personnalisé
-import { Button } from "@/components/ui/button"; // Composants UI
-import { AlertCircle } from "lucide-react"; // Icônes
+import { useAuth } from "@/lib/auth-context";
+import { createStory, updateStory, getStory } from "@/lib/firebase/firestore";
+import Editor from "../create-story/editor";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, BookOpen, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import AuthCheck from "@/components/auth-check"; // Protection de route
+import AuthCheck from "@/components/auth-check";
 
-// Définition du composant principal
 export default function WritePage() {
-  // États locaux gérés avec useState :
-  const [content, setContent] = useState(""); // Contenu de l'article
-  const [error, setError] = useState(""); // Messages d'erreur
-  const [isSaving, setIsSaving] = useState(false); // État de sauvegarde
-  const [story, setStory] = useState<any>(null); // Données de l'article existant
+  const [content, setContent] = useState("");
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [story, setStory] = useState<any>(null);
 
-  // Récupération des infos d'authentification et routing
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const storyId = searchParams.get("id"); // ID d'article depuis l'URL
+  const storyId = searchParams.get("id");
 
-  // useEffect pour charger un article existant
   useEffect(() => {
     if (storyId) {
       const loadStory = async () => {
         try {
           const loadedStory = await getStory(storyId);
-          // Vérification que l'utilisateur est l'auteur
           if (loadedStory && loadedStory.authorId === user?.uid) {
             setStory(loadedStory);
-            setContent(loadedStory.content); // Pré-remplir l'éditeur
+            setContent(loadedStory.content);
           }
         } catch (err: any) {
           setError("Failed to load the article");
@@ -42,84 +36,105 @@ export default function WritePage() {
       };
       loadStory();
     }
-  }, [storyId, user?.uid]); // Déclenché quand l'ID ou l'utilisateur change
+  }, [storyId, user?.uid]);
 
-  // Gestion de la sauvegarde (brouillon/publication)
   const handleSave = async (status: "draft" | "published") => {
-    if (!user) return; // Sécurité supplémentaire
+    if (!user) return;
 
     setIsSaving(true);
     setError("");
 
     try {
       if (storyId) {
-        // Mise à jour existante
         await updateStory(storyId, {
           content,
           status,
           updatedAt: new Date().toISOString(),
         });
       } else {
-        // Création nouvelle histoire
         const storyData = JSON.parse(
           localStorage.getItem("pendingStory") || "{}"
         );
         await createStory({
-          ...storyData, // Récupère les données précédentes
+          ...storyData,
           content,
           status,
           authorId: user.uid,
-          authorName: user.displayName || "Anonyme",
+          authorName: user.displayName || "Anonymous",
           createdAt: new Date().toISOString(),
         });
       }
 
       localStorage.removeItem("pendingStory");
-      router.push("/"); // Redirection après succès
+      router.push("/");
     } catch (err: any) {
       setError(err.message || "Failed to save the article");
     } finally {
-      setIsSaving(false); // Réinitialisation de l'état
+      setIsSaving(false);
     }
   };
 
-  // Rendu du composant
   return (
     <AuthCheck>
-      {" "}
-      {/* Protection de route */}
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-100">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-semibold text-emerald-900">
-              {storyId ? "Edit Story" : "Write Your Story"}
-            </h1>
-            <div className="space-x-4">
-              <Button
-                onClick={() => handleSave("draft")}
-                className="bg-black hover:bg-gray-800 text-white"
-                disabled={isSaving}
-              >
-                Save as Draft
-              </Button>
-              <Button
-                onClick={() => handleSave("published")}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={isSaving}
-              >
-                {isSaving ? "Saving..." : "Publish"}
-              </Button>
-            </div>
+      <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/30 dark:via-gray-900 dark:to-gray-900">
+        <div className="relative">
+          {/* Decorative elements */}
+          <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute left-0 top-1/4 h-[300px] w-[400px] rounded-full bg-gradient-to-br from-amber-200/20 to-orange-100/10 blur-3xl dark:from-amber-900/10 dark:to-orange-900/5" />
+            <div className="absolute right-0 bottom-1/4 h-[250px] w-[350px] rounded-full bg-gradient-to-br from-orange-100/20 to-amber-200/10 blur-3xl dark:from-orange-900/10 dark:to-amber-900/5" />
           </div>
 
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-5 w-5" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          {/* Sticky header */}
+          <header className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-amber-200/30 dark:border-amber-800/30">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex justify-between items-center">
+                <h1 className="font-serif text-2xl font-medium text-amber-900 dark:text-amber-100">
+                  {storyId ? "Edit Story" : "Write Your Story"}
+                </h1>
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={() => handleSave("draft")}
+                    variant="outline"
+                    className="border-amber-200/50 dark:border-amber-800/50 text-amber-900 dark:text-amber-100 hover:bg-amber-100/50 dark:hover:bg-amber-900/50"
+                    disabled={isSaving}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Draft
+                  </Button>
+                  <Button
+                    onClick={() => handleSave("published")}
+                    className="bg-amber-800 hover:bg-amber-700 text-amber-50 dark:bg-amber-700 dark:hover:bg-amber-600 shadow-lg shadow-amber-900/20 dark:shadow-amber-900/10"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Publish"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </header>
 
-          <Editor value={content} onChange={setContent} />
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-4xl mx-auto">
+              {error && (
+                <Alert
+                  variant="destructive"
+                  className="mb-6 rounded-2xl border-red-500/20 bg-red-50/50 dark:bg-red-900/20 backdrop-blur-xl"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-amber-200/30 dark:border-amber-800/30 shadow-2xl">
+                <Editor value={content} onChange={setContent} />
+              </div>
+
+              {/* Decorative book icon */}
+              <div className="mt-8 flex justify-center opacity-60">
+                <BookOpen className="h-8 w-8 text-amber-800/30 dark:text-amber-200/30" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </AuthCheck>

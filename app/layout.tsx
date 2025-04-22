@@ -1,20 +1,18 @@
-// 1. IMPORTATIONS ESSENTIELLES
-import type React from "react"; // nécessaire pour le typage des composants React pour TypeScript
-import type { Metadata } from "next"; // type metadata de next-js - permet de gérer les métadonnées SEO ed manière typée
-import "./globals.css"; // importation des styles globaux - contient les styles Tailwind et personnalisés
-import { AuthProvider } from "@/lib/auth-context"; // contexte d'authentification - gestion de l'état  de connexion gloable de l'application
-import Navbar from "@/components/navbar"; // composant de la barre de navigation - header qui sera présent surr toutes les pages
+import type React from "react";
+import type { Metadata } from "next";
+import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
+import Navbar from "@/components/navbar";
+import { BookOpen } from "lucide-react";
 
-// 2. CONFIGURATION DE LA POLICE
-import { Inter, Roboto, Alata } from "next/font/google";
+// Configure fonts to include serif options
+import { Lora } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
-const roboto = Roboto({ weight: "400", subsets: ["latin"] });
-const alata = Alata({ weight: "400", subsets: ["latin"] });
-export { inter, roboto, alata };
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-serif",
+});
 
-// 3. CONFIGURATION DES METADONNEES SEO
-// ces métadonnées sont utilisées par les moteurs de recherche pour décrire votre site web et ses pages.
 export const metadata: Metadata = {
   title: "WriteReadHub - A Modern Story Platform",
   description:
@@ -22,44 +20,54 @@ export const metadata: Metadata = {
   keywords: "stories, writing, reading, community, platform",
   authors: [{ name: "WriteReadHub", url: "https://www.writereadhub.com" }],
   creator: "hayat",
-  // openGraph est un objet qui contient les métadonnées pour les réseaux sociaux
-  // openGraph: {
-  //   title: "WriteReadHub - A Modern Story Platform",
-  //   description:
-  //     "Share and discover amazing stories from writers around the world",
-  //   url: "",
-  //   siteName: "WriteReadHub",
-  //   images: [
-  //     {
-  //       url: "",
-  //       width: 1200,
-  //       height: 630,
-  //       alt: "WriteReadHub - A Modern Story Platform",
-  //     },
-  //   ],
-  //   locale: "en_US",
-  //   type: "website",
-  // }
 };
 
-// 4. COMPOSANT DU LAYOUT PRINCIPAL
-//  ce composant enveloppe toutes les pages de l'application et fournit un contexte d'authentification global
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    // configuration de la langue - important pour l'accessibilité ausssi
-    <html lang="en" className="h-full">
-      <body className={`${alata.className} h-full`}>
+    <html lang="en" className={`h-full ${lora.variable}`}>
+      <body className="h-full bg-paper">
         <AuthProvider>
-          <div className="flex flex-col min-h-screen bg-gradient-to-b from-[#1A2F14] to-greenSauge">
+          <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-grow flex flex-col">{children}</main>
-            <footer className="py-6 border-t bg-greenSauge border-greenSauge">
-              <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-                © {new Date().getFullYear()} WriteReadHub. All rights reserved.
+            <main className="flex-grow flex flex-col relative">
+              {/* Background decorative elements */}
+              <div
+                className="fixed inset-0 pointer-events-none"
+                aria-hidden="true"
+              >
+                <div className="absolute left-0 top-1/4 h-[300px] w-[400px] rounded-full bg-gradient-to-br from-amber-200/20 to-orange-100/10 blur-3xl dark:from-amber-900/10 dark:to-orange-900/5" />
+                <div className="absolute right-0 bottom-1/4 h-[250px] w-[350px] rounded-full bg-gradient-to-br from-orange-100/20 to-amber-200/10 blur-3xl dark:from-orange-900/10 dark:to-amber-900/5" />
+              </div>
+
+              {/* Main content */}
+              <div className="relative">{children}</div>
+            </main>
+
+            {/* Footer with library theme */}
+            <footer className="relative border-t border-amber-200/30 dark:border-amber-800/30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+              <div className="container mx-auto px-4 py-8">
+                <div className="flex flex-col items-center justify-center gap-4">
+                  {/* Logo and name */}
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-6 w-6 text-amber-700 dark:text-amber-300" />
+                    <span className="text-lg font-serif font-medium text-amber-900 dark:text-amber-100">
+                      WriteReadHub
+                    </span>
+                  </div>
+
+                  {/* Copyright */}
+                  <div className="text-sm text-amber-700/60 dark:text-amber-300/60">
+                    © {new Date().getFullYear()} WriteReadHub. All rights
+                    reserved.
+                  </div>
+
+                  {/* Decorative line */}
+                  <div className="w-20 h-0.5 rounded-full bg-gradient-to-r from-amber-200 to-amber-300 dark:from-amber-700 dark:to-amber-600 opacity-50" />
+                </div>
               </div>
             </footer>
           </div>
