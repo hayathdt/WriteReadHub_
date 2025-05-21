@@ -12,7 +12,7 @@ import {
 import type { UserProfile, Story } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StoryList } from "@/components/story-list"; // Import StoryList component
+import StoryList from "@/components/story-list"; // Import StoryList component
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AuthCheck from "@/components/auth-check";
