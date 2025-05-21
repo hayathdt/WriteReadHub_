@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { createStory, updateStory, getStory, serverTimestamp } from "@/lib/firebase/firestore"; // Import serverTimestamp
+import { createStory, updateStory, getStory } from "@/lib/firebase/firestore"; // serverTimestamp removed
+import { serverTimestamp } from "firebase/firestore"; // Added direct import for serverTimestamp
 import Editor from "../create-story/editor";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, BookOpen, Save } from "lucide-react";
