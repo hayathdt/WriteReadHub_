@@ -6,10 +6,13 @@ import {
   createUserProfile,
   getUserProfile,
   updateUserProfile,
+  getStoriesByAuthorId,
+  getFavoriteStories, // Import for fetching favorite stories
 } from "@/lib/firebase/firestore";
-import type { UserProfile } from "@/lib/types";
+import type { UserProfile, Story } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { StoryList } from "@/components/story-list"; // Import StoryList component
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AuthCheck from "@/components/auth-check";
@@ -20,11 +23,18 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Profile loading
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("view");
+  const [userStories, setUserStories] = useState<Story[]>([]);
+  const [storiesLoading, setStoriesLoading] = useState(true);
+  const [favoriteStories, setFavoriteStories] = useState<Story[]>([]); // State for favorite stories
+  const [favoriteStoriesLoading, setFavoriteStoriesLoading] = useState(true); // Loading state for favorite stories
 
   const [formData, setFormData] = useState({
     displayName: "",
+    username: "",
+    avatar: "", // Added avatar to formData
     bio: "",
     website: "",
     twitter: "",
@@ -33,27 +43,79 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
       if (user) {
+        setLoading(true); 
+        setStoriesLoading(true);
+        setFavoriteStoriesLoading(true); // Initialize favorite stories loading
+
+        // Load profile
         const userProfile = await getUserProfile(user.uid);
         if (userProfile) {
           setProfile(userProfile);
           setFormData({
             displayName: userProfile.displayName,
+            username: userProfile.username || "",
+            avatar: userProfile.avatar || user?.photoURL || "",
             bio: userProfile.bio || "",
             website: userProfile.website || "",
             twitter: userProfile.socialLinks?.twitter || "",
             github: userProfile.socialLinks?.github || "",
             linkedin: userProfile.socialLinks?.linkedin || "",
           });
+        } else {
+           setFormData({
+            displayName: user?.displayName || "",
+            username: "",
+            avatar: user?.photoURL || "",
+            bio: "",
+            website: "",
+            twitter: "",
+            github: "",
+            linkedin: "",
+          });
         }
+        setLoading(false);
+
+        // Load user's own stories
+        try {
+          const stories = await getStoriesByAuthorId(user.uid);
+          setUserStories(stories);
+        } catch (error) {
+          console.error("Failed to fetch user stories:", error);
+          setUserStories([]);
+        } finally {
+          setStoriesLoading(false);
+        }
+
+        // Load favorite stories
+        try {
+          const favStories = await getFavoriteStories(user.uid);
+          setFavoriteStories(favStories);
+        } catch (error) {
+          console.error("Failed to fetch favorite stories:", error);
+          setFavoriteStories([]);
+        } finally {
+          setFavoriteStoriesLoading(false);
+        }
+
+      } else {
+        // Reset states if user logs out or is not available
+        setProfile(null);
+        setFormData({ 
+            displayName: "", username: "", avatar: "", bio: "", website: "", twitter: "", github: "", linkedin: ""
+        });
+        setUserStories([]);
+        setFavoriteStories([]); // Reset favorite stories
+        setLoading(false);
+        setStoriesLoading(false);
+        setFavoriteStoriesLoading(false); // Reset favorite stories loading
       }
-      setLoading(false);
     };
-    loadProfile();
+    loadData();
   }, [user]);
 
-  if (loading) {
+  if (loading) { 
     return (
       <div className="container mx-auto p-4">
         <p className="text-gray-500 dark:text-gray-400">Loading profile...</p>
@@ -71,10 +133,12 @@ export default function ProfilePage() {
       const profileData: UserProfile = {
         id: user.uid,
         displayName: formData.displayName || user.displayName || "User",
+        username: formData.username,
         email: user.email || "",
         bio: formData.bio,
         website: formData.website,
-        avatar: profile?.avatar || "",
+        // Prioritize formData.avatar, then existing profile.avatar, then auth photoURL
+        avatar: formData.avatar || profile?.avatar || user?.photoURL || "",
         socialLinks: {
           twitter: formData.twitter,
           github: formData.github,
@@ -82,28 +146,60 @@ export default function ProfilePage() {
         },
       };
 
-      // Try to update first
-      try {
+      const existingProfile = await getUserProfile(user.uid);
+      if (existingProfile) {
         await updateUserProfile(user.uid, profileData);
-      } catch (error) {
-        // If update fails, try to create
+      } else {
         await createUserProfile(user.uid, profileData);
       }
 
       const newProfile = await getUserProfile(user.uid);
       setProfile(newProfile);
+      if (newProfile) {
+        setFormData({
+            displayName: newProfile.displayName,
+            username: newProfile.username || "",
+            avatar: newProfile.avatar || user?.photoURL || "", // Repopulate avatar
+            bio: newProfile.bio || "",
+            website: newProfile.website || "",
+            twitter: newProfile.socialLinks?.twitter || "",
+            github: newProfile.socialLinks?.github || "",
+            linkedin: newProfile.socialLinks?.linkedin || "",
+        });
+      }
       setIsEditing(false);
+      setActiveTab("view"); // Switch to view tab after saving
       toast({
         title: "Success",
         description: "Your profile has been updated",
       });
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
+      if (error instanceof Error) {
+        if (
+          error.message === "Username already taken" || // Specific error from createUserProfile
+          error.message === "Username already taken by another user" // Specific error from updateUserProfile
+        ) {
+          toast({
+            title: "Username Conflict",
+            description:
+              "That username is already taken. Please choose another.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to update profile. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -131,35 +227,67 @@ export default function ProfilePage() {
 
           <div className="p-6">
             <Tabs
-              defaultValue="view"
-              value={isEditing ? "edit" : "view"}
+              value={activeTab}
+              onValueChange={setActiveTab}
               className="w-full"
             >
               <TabsList className="w-full mb-6 rounded-2xl bg-gray-100/50 dark:bg-gray-800/50 p-1">
                 <TabsTrigger
                   value="view"
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => { setActiveTab("view"); setIsEditing(false); }}
                   className="w-full rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-900"
                 >
-                  View
+                  View Profile
                 </TabsTrigger>
                 <TabsTrigger
                   value="edit"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => { setActiveTab("edit"); setIsEditing(true); }}
                   className="w-full rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-900"
                 >
-                  Edit
+                  Edit Profile
+                </TabsTrigger>
+                <TabsTrigger
+                  value="my-stories"
+                  onClick={() => { setActiveTab("my-stories"); setIsEditing(false); }}
+                  className="w-full rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-900"
+                >
+                  My Stories
+                </TabsTrigger>
+                <TabsTrigger
+                  value="favorite-stories"
+                  onClick={() => { setActiveTab("favorite-stories"); setIsEditing(false); }}
+                  className="w-full rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-900"
+                >
+                  Favorites
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="view">
+              <TabsContent value="view" className={activeTab === "view" ? "" : "hidden"}>
                 <div className="space-y-6">
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src={profile?.avatar || formData.avatar || "/placeholder-user.jpg"}
+                      alt={profile?.displayName || formData.displayName || "User"}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg"
+                    />
+                  </div>
+
                   <div className="rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl p-4 space-y-1">
                     <h3 className="text-base font-medium text-gray-500 dark:text-gray-400">
                       Display Name
                     </h3>
                     <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
                       {profile?.displayName}
+                    </p>
+                  </div>
+
+                  {/* Username display section */}
+                  <div className="rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl p-4 space-y-1">
+                    <h3 className="text-base font-medium text-gray-500 dark:text-gray-400">
+                      Username
+                    </h3>
+                    <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      {profile?.username || "Not set"}
                     </p>
                   </div>
 
@@ -315,6 +443,26 @@ export default function ProfilePage() {
 
               <TabsContent value="edit">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Avatar URL input field in edit mode */}
+                  <div className="rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl p-4 space-y-2">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Profile Picture URL
+                    </label>
+                    <Input
+                      name="avatar"
+                      type="url"
+                      value={formData.avatar}
+                      onChange={handleChange}
+                      placeholder="https://example.com/your-image.png"
+                      className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50"
+                    />
+                    {formData.avatar && (
+                      <div className="mt-2">
+                        <img src={formData.avatar} alt="Avatar preview" className="w-24 h-24 rounded-full object-cover border dark:border-gray-700"/>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl p-4 space-y-2">
                     <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
                       Display Name
@@ -326,6 +474,22 @@ export default function ProfilePage() {
                       required
                       className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50"
                     />
+                  </div>
+                  
+                  <div className="rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl p-4 space-y-2">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Username
+                    </label>
+                    <Input
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      required
+                      className="rounded-xl border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50"
+                    />
+                    <p className="text-xs text-gray-400 dark:text-gray-500 pt-1">
+                      Username must be unique and cannot be changed once set.
+                    </p>
                   </div>
 
                   <div className="rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl p-4 space-y-2">
@@ -403,6 +567,22 @@ export default function ProfilePage() {
                     {isSaving ? "Saving..." : "Save Changes"}
                   </Button>
                 </form>
+              </TabsContent>
+
+              <TabsContent value="my-stories" className={activeTab === "my-stories" ? "" : "hidden"}>
+                {storiesLoading ? (
+                  <p className="text-gray-500 dark:text-gray-400">Loading stories...</p>
+                ) : (
+                  <StoryList stories={userStories} user={user} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="favorite-stories" className={activeTab === "favorite-stories" ? "" : "hidden"}>
+                {favoriteStoriesLoading ? (
+                  <p className="text-gray-500 dark:text-gray-400">Loading favorite stories...</p>
+                ) : (
+                  <StoryList stories={favoriteStories} user={user} />
+                )}
               </TabsContent>
             </Tabs>
           </div>

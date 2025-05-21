@@ -1,25 +1,102 @@
-import { getStory } from "@/lib/firebase/firestore";
+"use client"; // Convert to Client Component
+
+import { useEffect, useState } from "react";
+import { getStory, isStoryFavorited, addStoryToFavorites, removeStoryFromFavorites } from "@/lib/firebase/firestore";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/components/ui/use-toast";
 import { formatDate } from "@/lib/utils";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation"; // useParams for client component
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Book } from "lucide-react";
+import { ArrowLeft, Book, Heart } from "lucide-react";
+import type { Story } from "@/lib/types"; // Import Story type
 
-export default async function StoryPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const story = await getStory(params.id);
+export default function StoryPage() {
+  const params = useParams<{ id: string }>(); // Get params in client component
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [story, setStory] = useState<Story | null>(null);
+  const [storyLoading, setStoryLoading] = useState(true);
+
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [checkingFavorite, setCheckingFavorite] = useState(true);
+  const [togglingFavorite, setTogglingFavorite] = useState(false);
+
+  useEffect(() => {
+    const fetchStory = async () => {
+      if (params.id) {
+        setStoryLoading(true);
+        const fetchedStory = await getStory(params.id);
+        if (!fetchedStory) {
+          notFound();
+        } else {
+          setStory(fetchedStory);
+        }
+        setStoryLoading(false);
+      }
+    };
+    fetchStory();
+  }, [params.id]);
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (user && story) {
+        setCheckingFavorite(true);
+        const favorited = await isStoryFavorited(user.uid, story.id);
+        setIsFavorited(favorited);
+        setCheckingFavorite(false);
+      } else if (!user) {
+        // If user is not logged in, story is not favorited by default and not checking
+        setIsFavorited(false);
+        setCheckingFavorite(false);
+      }
+    };
+    checkFavorite();
+  }, [user, story]);
+
+  const handleToggleFavorite = async () => {
+    if (!user || checkingFavorite || togglingFavorite || !story) return;
+
+    setTogglingFavorite(true);
+    try {
+      if (isFavorited) {
+        await removeStoryFromFavorites(user.uid, story.id);
+        setIsFavorited(false);
+        toast({ title: "Success", description: "Removed from favorites." });
+      } else {
+        await addStoryToFavorites(user.uid, story.id);
+        setIsFavorited(true);
+        toast({ title: "Success", description: "Added to favorites!" });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast({ title: "Error", description: "Failed to update favorites. Please try again.", variant: "destructive" });
+    } finally {
+      setTogglingFavorite(false);
+    }
+  };
+
+  if (storyLoading) {
+    return (
+      <div className="container mx-auto p-4 min-h-screen flex justify-center items-center">
+        <p className="text-gray-500 dark:text-gray-400">Loading story...</p>
+      </div>
+    );
+  }
 
   if (!story) {
-    notFound();
+    // Should be handled by notFound() in useEffect, but as a fallback
+    return (
+        <div className="container mx-auto p-4 min-h-screen flex justify-center items-center">
+          <p className="text-red-500 dark:text-red-400">Story not found.</p>
+        </div>
+      );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/30 dark:via-gray-900 dark:to-gray-900">
       <div className="container relative mx-auto px-4 py-8">
-        {/* Decorative elements */}
         <div
           className="absolute inset-0 pointer-events-none"
           aria-hidden="true"
@@ -55,6 +132,21 @@ export default async function StoryPage({
               </div>
             </div>
 
+            {/* Favorite Button */}
+            {user && (
+              <div className="mt-6 mb-8">
+                <Button
+                  onClick={handleToggleFavorite}
+                  disabled={checkingFavorite || togglingFavorite}
+                  variant="outline"
+                  className="border-amber-300 dark:border-amber-700 hover:bg-amber-100/50 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-100"
+                >
+                  <Heart className={`mr-2 h-4 w-4 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-amber-700 dark:text-amber-300'}`} />
+                  {checkingFavorite ? 'Checking...' : togglingFavorite ? (isFavorited ? 'Removing...' : 'Adding...') : (isFavorited ? 'Unfavorite' : 'Favorite')}
+                </Button>
+              </div>
+            )}
+
             <div className="mb-8">
               <p className="text-lg text-amber-800/90 dark:text-amber-200/90 italic">
                 {story.description}
@@ -72,8 +164,7 @@ export default async function StoryPage({
               ))}
             </div>
           </div>
-
-          {/* Decorative book icon */}
+          
           <div className="flex justify-center opacity-60 mb-8">
             <Book className="h-8 w-8 text-amber-800/30 dark:text-amber-200/30" />
           </div>
