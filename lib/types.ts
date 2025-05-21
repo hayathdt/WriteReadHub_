@@ -1,3 +1,5 @@
+import type { FieldValue, Timestamp } from "firebase/firestore";
+
 export type StoryStatus = "draft" | "published";
 
 export interface Story {
@@ -8,8 +10,8 @@ export interface Story {
   genre: string;
   authorId: string;
   authorName: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp; // Changed from string
+  updatedAt: Timestamp; // Changed from string
   status: StoryStatus;
 }
 
@@ -20,7 +22,7 @@ export interface StoryInput {
   genre: string;
   authorId: string;
   authorName: string;
-  createdAt: string;
+  createdAt: FieldValue; // Changed from string
   status: StoryStatus;
 }
 
@@ -30,7 +32,7 @@ export interface StoryUpdate {
   title?: string;
   genre?: string;
   status?: StoryStatus;
-  updatedAt: string;
+  updatedAt: FieldValue; // Changed from string
 }
 
 export interface SocialLinks {

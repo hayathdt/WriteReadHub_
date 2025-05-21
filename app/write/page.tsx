@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { createStory, updateStory, getStory } from "@/lib/firebase/firestore";
+import { createStory, updateStory, getStory, serverTimestamp } from "@/lib/firebase/firestore"; // Import serverTimestamp
 import Editor from "../create-story/editor";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, BookOpen, Save } from "lucide-react";
@@ -49,7 +49,7 @@ export default function WritePage() {
         await updateStory(storyId, {
           content,
           status,
-          updatedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(), // Use serverTimestamp
         });
       } else {
         const storyData = JSON.parse(
@@ -61,7 +61,7 @@ export default function WritePage() {
           status,
           authorId: user.uid,
           authorName: user.displayName || "Anonymous",
-          createdAt: new Date().toISOString(),
+          createdAt: serverTimestamp(), // Use serverTimestamp
         });
       }
 
