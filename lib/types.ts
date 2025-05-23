@@ -49,3 +49,34 @@ export interface UserProfile {
   website?: string;
   socialLinks?: SocialLinks;
 }
+
+export interface Comment {
+  id: string;
+  storyId: string;
+  userId: string;
+  userName: string; // To display alongside the comment
+  userAvatar?: string; // Optional: URL to user's avatar
+  text: string;
+  createdAt: string; // ISO string date
+}
+
+export interface CommentInput {
+  storyId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+}
+
+export interface Rating {
+  id: string; // Document ID
+  storyId: string;
+  userId: string;
+  value: 1 | 2 | 3 | 4 | 5; // 5-star rating
+}
+
+export interface RatingInput {
+  storyId: string;
+  userId: string;
+  value: 1 | 2 | 3 | 4 | 5;
+}
